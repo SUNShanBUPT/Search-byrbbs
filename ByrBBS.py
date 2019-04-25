@@ -23,7 +23,7 @@ for i in range(10):  # the number of pages you want to get, max:369
 
     for article in articletitle:
         article_url = "http://bbs.byr.cn" + article[0]
-        print(article_url)
+        print('Searching ' + article_url)
         article_content = session.get(article_url, headers=my_header).text
         regname = r'<span\sclass="a-u-name"><a\shref=".*?">(.*?)</a>.*?<div\sclass="a-content-wrap">(.*?)<font\sclass="f000"></font>'
         resname = re.compile(regname)
@@ -45,6 +45,16 @@ for i in range(10):  # the number of pages you want to get, max:369
                 print(article_url)
                 print(article[1])
                 print(tempstr)
+		
+		filename = article[1] + '.txt'
+                if os.path.exists(filename):
+                    continue
+                else:
+                    txt = open(filename, 'w+')
+                    txt.write(article_url + '\n')
+                    txt.write(article[1] + '\n')
+                    txt.write(tempstr)
+                    txt.close()
         except IndexError:
             pass
 
