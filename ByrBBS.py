@@ -13,7 +13,7 @@ req = session.post(r_url, data=byr_data, headers=my_header)
 
 for i in range(10):  # the number of pages you want to get, max:369
     page = session.get("https://bbs.byr.cn/board/Friends?p=" + str(i), headers=my_header)
-    print(i+1)
+    print('Searching page ' + str(i+1))
     soup = BeautifulSoup(page.text, "html.parser")
 
     res = r'<td\sclass="title_9"><a\shref="(.*?)">(.*?)</a>'
