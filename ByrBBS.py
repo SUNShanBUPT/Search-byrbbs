@@ -5,27 +5,26 @@ import re
 
 class ByrBbs(object):
 
-    def __init__(self):
+    def __init__(self, id, password):
         """ByrBbs Init"""
         self.session = requests.session()
         self.header = {'x-requested-with': 'XMLHttpRequest'}
+        self.id = id
+        self.password = password
+        self.total_pages = 10
+        self.keys = []
+        self.section = ''
 
     def login(self):
         """Login to byr_bbs"""
         login_url = 'https://bbs.byr.cn/user/ajax_login.json'
-        byr_data = {'id': '', 'passwd': ''}  # Your id and password
+        byr_data = {'id': self.id, 'passwd': self.password}
         self.session.post(login_url, data=byr_data, headers=self.header)
 
-    def search_section(self, section, total, keys):
-        """Search the given section in ByrBbs
-
-        Args:
-            section: the section name in ByrBbs
-            total: the total pages to search (Take Friends section for example, total must not bigger than 369)
-
-        """
-        for i in range(total):
-            section_page = self.session.get("https://bbs.byr.cn/board/" + section + '?p=' + str(i), headers=self.header)
+    def search_section(self):
+        """Search the given section in ByrBbs"""
+        for i in range(self.total_pages):
+            section_page = self.session.get("https://bbs.byr.cn/board/" + self.section + '?p=' + str(i), headers=self.header)
             print('Searching page ' + str(i + 1))
 
             res = r'<td\sclass="title_9"><a\shref="(.*?)">(.*?)</a>'  # to get posts information in each section pages
@@ -41,9 +40,9 @@ class ByrBbs(object):
                 resname = re.compile(regname)
                 post_content = re.findall(resname, post_info)
 
-                self.search_keys(forum_post, post_content, keys)
+                self.search_keys(forum_post, post_content)
 
-    def search_keys(self, forum_post, post_content, keys):
+    def search_keys(self, forum_post, post_content):
         try:
             tempsrc = post_content[0][1].replace('<br />', '\n').replace(' ', '  ')
             # remove picture
@@ -59,11 +58,11 @@ class ByrBbs(object):
             tempstr = sepe + '\n' + tempstr4 + '\n'
 
             counter = 0
-            for key in keys:
+            for key in self.keys:
                 if tempstr.find(key) != -1:
                     counter = counter + 1
 
-            if counter == len(keys):
+            if counter == len(self.keys):
                 print("http://bbs.byr.cn" + forum_post[0])
                 print(forum_post[1])
                 print(tempstr)
@@ -80,17 +79,20 @@ class ByrBbs(object):
         except IndexError:
             pass
 
-    def start(self):
+    def start(self, section, total_pages, keys):
         self.login()
+        self.total_pages = total_pages
+        self.keys = keys
+        self.section = section
+        self.search_section()
 
-        keys = ['网研', '保研']
-
-        self.search_section('AimGraduate', 8, keys)
 
 def main():
-    b = ByrBbs()
-    b.start()
+    keys = ['网研', '保研']  # Search keys
+    b = ByrBbs('', '')  # Your id and password
+    b.start('AimGraduate', 8, keys)  # 'The section you want to search', 'Total pages'
 
 
 if __name__ == "__main__":
     main()
+
