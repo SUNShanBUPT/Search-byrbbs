@@ -2,26 +2,38 @@ import requests
 import os
 import re
 import time
+import sys
 
 
 class ByrBbs(object):
 
     def __init__(self, id, password):
         """ByrBbs Init"""
-        self.session = requests.session()
-        self.header = {'x-requested-with': 'XMLHttpRequest'}
-        self.id = id
-        self.password = password
-        self.total_pages = 10
-        self.keys = []
-        self.section = ''
-        self.date = '2016-01-01'
+        if id is '' or password is '':
+            print("请在main()函数ByrBbs('', '')构造器中依次输入byrbbs账号和密码")
+            sys.exit(1)
+        else:
+            self.session = requests.session()
+            self.header = {'x-requested-with': 'XMLHttpRequest'}
+            self.id = id
+            self.password = password
+            self.total_pages = 10
+            self.keys = []
+            self.section = ''
+            self.date = '2016-01-01'
 
     def login(self):
         """Login to byr_bbs"""
         login_url = 'https://bbs.byr.cn/user/ajax_login.json'
         byr_data = {'id': self.id, 'passwd': self.password}
         self.session.post(login_url, data=byr_data, headers=self.header)
+        self.verify_login()
+
+    def verify_login(self):
+        test_url = self.session.get("https://bbs.byr.cn/board/IT?p=1", headers=self.header).text
+        if test_url.find('您未登录,请登录后继续操作') != -1:
+            print('登陆失败！您输入的账号密码有误，请检查后重新输入')
+            sys.exit(1)
 
     def search_section(self):
         """Search the given section in ByrBbs"""
@@ -44,7 +56,7 @@ class ByrBbs(object):
 
                 text = self.get_text(forum_post, post_content)
                 if self.search_keys(forum_post, text):
-                    self.download(forum_post, text)
+                    self.save(forum_post, text)
 
     def get_text(self, forum_post, post_content):
         try:
@@ -100,29 +112,39 @@ class ByrBbs(object):
         else:
             return False
 
-    def download(self, forum_post, text):
+    def save(self, forum_post, text):
         """filename = time.strftime("%Y-%m-%d-", time.localtime()) + self.section + re.sub(r"[\/\\\:\*\?\"\<\>\|]", '_',
                                                                                         forum_post[1]) + '.txt'
         """
-        filename = self.get_text_time(text) + '_'+ self.section + re.sub(r"[\/\\\:\*\?\"\<\>\|]", '_', forum_post[1]) + '.txt'
 
-        if os.path.exists(filename):
+        cur_path = os.path.abspath(os.curdir)
+        target_dir = cur_path + '\\' + self.section
+        folder = os.path.exists(target_dir)
+        if not folder:
+            os.makedirs(target_dir)
+
+        filename = self.get_text_time(text) + '_'+ self.section + re.sub(r"[\/\\\:\*\?\"\<\>\|]", '_', forum_post[1]) + '.txt'
+        txt_path = target_dir + '\\' + filename
+
+        if os.path.exists(txt_path):
             pass
         else:
-            txt = open(filename, 'w+')
+            txt = open(txt_path, 'w+')
             txt.write("http://bbs.byr.cn" + forum_post[0] + '\n')
             txt.write(forum_post[1] + '\n')
             txt.write(text)
             txt.close()
 
-    def start(self, section, total_pages, keys, date):
+    def start(self):
         self.login()
+        self.search_section()
+
+    def configuration(self, section, total_pages, keys, date):
         self.total_pages = total_pages
         self.keys = keys
         self.section = section
         if date:
             self.date = date
-        self.search_section()
 
 
 def main():
@@ -130,7 +152,8 @@ def main():
     keys = ['硕士', '内推']  # Search keys
     b = ByrBbs('', '')  # Your id and password
     for section in ['IT', 'jobinfo']:
-        b.start(section, 10, keys, '2019-01-01')  # 'The section you want to search', 'Total pages', 'keys', 'search posts after this date'
+        b.configuration(section, 10, keys, '')  # 'The section you want to search', 'Total pages'
+        b.start()
 
 
 if __name__ == "__main__":
