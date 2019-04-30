@@ -20,7 +20,7 @@ class ByrBbs(object):
             self.total_pages = 10
             self.keys = []
             self.section = ''
-            self.date = '2016-01-01'
+            self.date = '2019-01-01'
 
     def login(self):
         """Login to byr_bbs"""
@@ -139,20 +139,31 @@ class ByrBbs(object):
         self.login()
         self.search_section()
 
-    def configuration(self, section, total_pages, keys, date):
+    def configuration(self, section, total_pages, date='2019-01-01'):
         self.total_pages = total_pages
-        self.keys = keys
         self.section = section
-        if date:
-            self.date = date
+        self.date = date
+
+    def get_keys(self):
+        try:
+            keys_num = int(input("请输入您要搜索关键词总个数: "))
+        except ValueError:
+            print("请输入数字！")
+            sys.exit(1)
+        keys = []
+        for i in range(keys_num):
+            key = input("请输入第 " + str(i + 1) + " 个关键词: ")
+            keys.append(key)
+
+        self.keys = keys
 
 
 def main():
 
-    keys = ['硕士', '内推']  # Search keys
     b = ByrBbs('', '')  # Your id and password
+    b.get_keys()
     for section in ['IT', 'jobinfo']:
-        b.configuration(section, 10, keys, '')  # 'The section you want to search', 'Total pages'
+        b.configuration(section, 1)  # 'The section you want to search', 'Total pages'
         b.start()
 
 
